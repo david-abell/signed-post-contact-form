@@ -12,4 +12,4 @@ This will create an S3 bucket, two Lambda functions, and an API Gateway REST API
 
 ## Frontend testing
 
-Replace the form element with `id=urlinput`'s `action URL` in `presigned-post.html` in the `frontend` directory with the one from the deployed backend console output.
+Replace the form element with `id=urlinput`'s `action URL` in `presigned-post.html` in the `frontend` directory with the url from the deployed backend console output.
