@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Presigned formfields object upload</title>
+    <style>
+      body {
+        box-sizing: border-box;
+        font-family: sans-serif;
+        font-size: 1.2rem;
+        padding: 2em;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 480px;
+        margin: 0em auto;
+        background-color: aliceblue;
+        padding: 2em;
+        text-align: center;
+      }
+
+      #output {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 450px;
+        margin: 0 auto;
+        text-align: center;
+        padding: 2em;
+      }
+
+      form > input {
+        width: 100%;
+        margin-bottom: 1.5em;
+        padding: 0.5em;
+        font-size: 1.2rem;
+        border-radius: 5px;
+      }
+
+      form > label {
+        margin-bottom: 0.5em;
+      }
+    </style>
+  </head>
+  <body>
+    <form
+      id="urlinput"
+      method="post"
+      enctype="multipart/form-data"
+      action="https://your-url-here"
+    >
+      <h2>Upload to S3 with presigned post</h2>
+      <label for="firstName">First Name</label>
+      <input type="text" name="firstName" />
+      <label for="lastName">Last Name</label>
+      <input type="text" name="lastName" />
+      <label for="userEmail">Email Address</label>
+      <input type="text" name="userEmail" />
+      <label for="message">message</label>
+      <input type="text" name="message" />
+      <label for="files">Select multiple files</label>
+      <input type="file" name="files" id="fileinput" multiple />
+      <input type="submit" value="Submit" id="uploadbutton" />
+    </form>
+    <div id="output"></div>
+    <script type="text/javascript" src="presigned-post.js"></script>
+    <script type="text/javascript">
+      const url = document.getElementById("urlinput").action;
+      const presignedpost = document.getElementById("presignedpost");
+      const fileinput = document.getElementById("fileinput");
+      const uploadbutton = document.getElementById("uploadbutton");
+      const output = document.getElementById("output");
+      let newUserId = "12345";
+
+      uploadbutton.addEventListener("click", async (e) => {
+        const signedFormdata = new FormData(
+          document.getElementById("urlinput")
+        );
+        e.preventDefault();
+
+        // Build file object to transmit all files and form fields
+        let fileList = new FormData();
+        let files = fileinput.files;
+        let result;
+        //Need to add uuidv4() userId generator
+        let userId = JSON.stringify({
+          userId: newUserId,
+        });
+
+        // Limit total maximum upload
+        for (const fileEntry of files) {
+          let totalFileSize = 0;
+          totalFileSize += fileEntry.size;
+          if (totalFileSize > 20000000) {
+            result =
+              "File uploads were not successful. Files are greater than 20MB";
+            output.innerHTML = result;
+            return;
+          }
+          fileList.append("files", fileEntry);
+        }
+
+        // Send all files one at a time
+        result = await uploadFilesViaPresignedPost(url, fileList, userId);
+
+        if (result["errors"].length !== 0) {
+          console.log(result["files"]);
+          return (output.innerHTML = `The file: ${result.errors} failed to upload`);
+        }
+
+        // Build Form field object with user id, posted file key and metadata records
+        // then convert into Json blob file
+        let fieldsJson = removeFormFiles(signedFormdata);
+        fieldsJson["userId"] = newUserId;
+        fieldsJson["files"] = result["files"];
+        // console.log("signedFormdata", Array.from(signedFormdata));
+
+        const formJson = new Blob([JSON.stringify(fieldsJson)], {
+          type: "application/json",
+        });
+
+        let formResult;
+
+        formResult = await uploadFormdataViaPresignedPost(
+          url,
+          formJson,
+          userId
+        );
+
+        output.innerHTML = formResult;
+      });
+
+      function removeFormFiles(formDataInput) {
+        let obj = {
+          formFields: {},
+        };
+
+        for (const fieldEntry of formDataInput) {
+          if (fieldEntry[0] !== "files") {
+            obj["formFields"][fieldEntry[0]] = fieldEntry[1];
+          }
+        }
+        // console.log("removeformfiles object", obj);
+        return obj;
+      }
+
+      // function validateSize(input) {
+      //   const fileSize = input.size / 1024 / 1024; // in MiB
+      //   if (fileSize > 2) {
+      //     alert("File size exceeds 2 MiB");
+      //   } else {
+      //     // Proceed further
+      //   }
+      // }
+    </script>
+  </body>
+</html>

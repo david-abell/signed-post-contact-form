@@ -1,0 +1,79 @@
+service: presigned-s3-upload
+useDotenv: true
+
+provider:
+  lambdaHashingVersion: "20201221"
+  name: aws
+  runtime: nodejs12.x
+  region: ${env:AWS_REGION}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - s3:*
+            - lambda:InvokeFunction
+          Resource:
+            - Fn::Join:
+                - ""
+                - - "arn:aws:s3:::"
+                  - Ref: "SignedUploadBucket"
+                  - "/*"
+        - Effect: Allow
+          Action:
+            - lambda:InvokeFunction
+            - lambda:InvokeAsync
+            - "ses:SendEmail"
+            - "ses:SendRawEmail"
+          Resource: "arn:aws:lambda:${env:AWS_REGION}:*:function:${self:service}-${sls:stage}-*"
+        - Effect: "Allow"
+          Action:
+            - "ses:SendEmail"
+            - "ses:SendRawEmail"
+          Resource:
+            - "arn:aws:ses:${env:AWS_REGION}:${env:ACCOUNT_ID}:identity/*"
+
+  environment:
+    BUCKET_NAME:
+      Ref: SignedUploadBucket
+    EMAIL_TO: ${env:EMAIL_TO}
+    EMAIL_FROM: ${env:EMAIL_FROM}
+  apiGateway:
+    binaryMediaTypes:
+      - "multipart/form-data"
+
+package:
+  patterns:
+    - "!tests"
+
+functions:
+  sign-post:
+    handler: s3/signed-post.sign
+    events:
+      - http:
+          path: /signed-post
+          method: post
+          cors: true
+  newUpload:
+    handler: s3/upload-event.newUpload
+    events:
+      - s3:
+          bucket: ${env:AWS_BUCKET_NAME}
+          event: s3:ObjectCreated:*
+          # rules:
+          #   - suffix: .json
+          existing: true
+resources:
+  Resources:
+    SignedUploadBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        CorsConfiguration:
+          CorsRules:
+            - AllowedMethods:
+                - PUT
+                - POST
+              AllowedOrigins:
+                - "*"
+              AllowedHeaders:
+                - "*"

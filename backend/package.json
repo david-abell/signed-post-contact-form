@@ -1,0 +1,23 @@
+{
+  "name": "presigned-s3-upload",
+  "version": "1.0.0",
+  "description": "",
+  "repository": "",
+  "license": "MIT",
+  "jest": {
+    "verbose": true
+  },
+  "dependencies": {
+    "content-disposition": "^0.5.3",
+    "dotenv": "^10.0.0",
+    "file-type": "^16.5.0",
+    "nodemailer": "^6.6.2",
+    "read-chunk": "^3.2.0",
+    "uuid": "^7.0.3"
+  },
+  "devDependencies": {
+    "@types/jest": "^26.0.23",
+    "jest": "^27.0.6",
+    "serverless": "^2.46.0"
+  }
+}
