@@ -26,6 +26,9 @@ test.env
 jsconfig.json
 jest.config.js
 
+#VS Code
+s3-signedpost-contact-form.code-workspace
+
 #Object structure test files
 examples/*
 
