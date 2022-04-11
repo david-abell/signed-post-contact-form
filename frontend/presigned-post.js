@@ -59,7 +59,7 @@ async function uploadFilesViaPresignedPost(apiUrl, files, userId) {
           fields: { key, bucket, "X-Amz-Date": postDate },
         },
       }) => ({ key, bucket, postDate }))(json);
-      postFields["Content-Type"] = contentType;
+      postFields["content-Type"] = contentType;
       postFields["file-name"] = currentFilename;
 
       console.log("postfields", postFields);

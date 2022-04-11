@@ -55,13 +55,14 @@ functions:
           method: post
           cors: true
   newUpload:
-    handler: s3/upload-event.newUpload
+    handler: s3/event-handler.newUpload
+    # handler: s3/upload-event.newUpload
     events:
       - s3:
           bucket: ${env:AWS_BUCKET_NAME}
           event: s3:ObjectCreated:*
-          # rules:
-          #   - suffix: .json
+          rules:
+            - suffix: .json
           existing: true
 resources:
   Resources:
